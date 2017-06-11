@@ -47,7 +47,7 @@ namespace Excel_Flat_File_Converter {
 			LogLine ("Creating flat files...", true);
 			if (files.Count > 0) {
 				foreach (string file in files) {
-					LogLine ("    " + Path.GetFileName (file));
+					LogLine ("    " + Path.GetFileName (file), true);
 					CreateFlatFile (file);
 				}
 			}
@@ -133,8 +133,14 @@ namespace Excel_Flat_File_Converter {
 			string newfile = file.Substring (0, file.Length - Path.GetExtension (file).Length) + suffix + Path.GetExtension (file);
 			if (File.Exists(newfile))
 				LogLine ("Overwriting existing flat file...", true);
-			File.Copy (file, newfile, true);
-			File.SetLastWriteTime (newfile, DateTime.Now);
+			try {
+				File.Copy (file, newfile, true);
+				File.SetLastWriteTime (newfile, DateTime.Now);
+			} catch (IOException) {
+				LogLine ("ERROR: Could not overwrite the existing flat file as it was in use by another program.", true);
+				LogLine ("     : Please ensure it is closed in Excel and try again.", true);
+				LogLine ();
+			}
 
 			// Create a new Excel Application instance if we haven't already
 			if (xlApp == null) {
