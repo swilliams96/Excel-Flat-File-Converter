@@ -158,11 +158,12 @@ namespace Excel_Flat_File_Converter {
 			}
 
 			// Select cell A1 of the first sheet, just to reset all of the selections made when copying and pasting (tidier)
-			Excel.Worksheet firstSheet = wb.Worksheets[0];
+			Excel.Worksheet firstSheet = wb.Worksheets[1];
 			firstSheet.Activate ();
-			firstSheet.Range[0, 0].Activate ();
+			firstSheet.Range["ZZ999"].Activate ();		// Select something not selected to reset selection
+			firstSheet.Range["A1"].Activate ();			// Select A1 on first sheet
 
-
+			// Save and close!
 			wb.Save ();
 			wb.Close ();
 		}
