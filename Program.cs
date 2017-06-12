@@ -21,7 +21,7 @@ namespace Excel_Flat_File_Converter {
 		static readonly string suffix = " (FLAT)";
 
 		static void Main (string[] args) {
-			
+
 			files = new List<string> ();
 
 			// Parse any given arguments
@@ -58,7 +58,8 @@ namespace Excel_Flat_File_Converter {
 				LogLine ("Press any key to exit...");
 				Console.ReadKey ();
 			}
-			
+
+			// Finish
 			sw.Close ();
 			xlApp.Quit ();
 		}
