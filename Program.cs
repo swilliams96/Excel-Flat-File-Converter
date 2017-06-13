@@ -16,9 +16,9 @@ namespace Excel_Flat_File_Converter {
 
 		static List<string> files;
 		static bool silent = false;
+		static string suffix = " (FLAT)";
 
 		static readonly string[] validExtensions = new string[] { ".xlsx", ".xlsm", ".xls" };
-		static readonly string suffix = " (FLAT)";
 
 		static void Main (string[] args) {
 
@@ -32,10 +32,22 @@ namespace Excel_Flat_File_Converter {
 				GetFilesFromInput ();		// If no arguments then ask the user for input
 			} else {
 				for (int i = 0; i < args.Length; i++) {
-					if (args[i].Substring (0, 1) == "-") {
+					if (args[i].Substring (0, 1) == "-" && args[i].Length > 1) {
 						if (args[i].Substring (1) == "s") {
 							// Silent mode
 							silent = true;
+						}
+						if (args[i].Substring (1) == "datesuffix" || args[i].Substring (1) == "datesuffix1" || args[i].Substring (1) == "ds" || args[i].Substring (1) == "ds1") {
+							// Set suffix to current date in the format " (YYYYMMDD)"
+							suffix = " (" + DateTime.Now.Year.ToString () + DateTime.Now.Month.ToString () + DateTime.Now.Day.ToString () + ")";
+						}
+						if (args[i].Substring (1) == "datesuffix2" || args[i].Substring (1) == "ds2") {
+							// Set suffix to current date in the format " (YYYY_MM_DD)"
+							suffix = " (" + DateTime.Now.Year.ToString () + "_" + DateTime.Now.Month.ToString () + "_" + DateTime.Now.Day.ToString () + ")";
+						}
+						if (args[i].Substring (1) == "datesuffixreverse" || args[i].Substring (1) == "dsr" || args[i].Substring (1) == "dsr1") {
+							// Set suffix to current date in the format " (DD_MM_YYYY)"
+							suffix = " (" + DateTime.Now.Day.ToString () + "_" + DateTime.Now.Month.ToString () + "_" + DateTime.Now.Year.ToString () + ")";
 						}
 					} else {
 						if (File.Exists (args[i]) || Directory.Exists (args[i])) {
@@ -50,12 +62,14 @@ namespace Excel_Flat_File_Converter {
 			LogLine ();
 
 			// Loop through each of the files and create a flat file
-			LogLine ("Creating flat files...", true);
 			if (files.Count > 0) {
+				LogLine ("Creating flat files...", true);
 				foreach (string file in files) {
 					LogLine ("    " + Path.GetFileName (file), true);
 					CreateFlatFile (file);
 				}
+			} else {
+				LogLine ("No files given.", true);
 			}
 			LogLine ();
 
