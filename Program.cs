@@ -39,15 +39,15 @@ namespace Excel_Flat_File_Converter {
 						}
 						if (args[i].Substring (1) == "datesuffix" || args[i].Substring (1) == "datesuffix1" || args[i].Substring (1) == "ds" || args[i].Substring (1) == "ds1") {
 							// Set suffix to current date in the format " (YYYYMMDD)"
-							suffix = " (" + DateTime.Now.Year.ToString () + DateTime.Now.Month.ToString () + DateTime.Now.Day.ToString () + ")";
+							suffix = " (" + DateTime.Now.ToString ("yyyyMMdd") + ")";
 						}
 						if (args[i].Substring (1) == "datesuffix2" || args[i].Substring (1) == "ds2") {
 							// Set suffix to current date in the format " (YYYY_MM_DD)"
-							suffix = " (" + DateTime.Now.Year.ToString () + "_" + DateTime.Now.Month.ToString () + "_" + DateTime.Now.Day.ToString () + ")";
+							suffix = " (" + DateTime.Now.ToString ("yyyy_MM_dd") + ")";
 						}
 						if (args[i].Substring (1) == "datesuffixreverse" || args[i].Substring (1) == "dsr" || args[i].Substring (1) == "dsr1") {
 							// Set suffix to current date in the format " (DD_MM_YYYY)"
-							suffix = " (" + DateTime.Now.Day.ToString () + "_" + DateTime.Now.Month.ToString () + "_" + DateTime.Now.Year.ToString () + ")";
+							suffix = " (" + DateTime.Now.ToString ("dd_MM_yyyy") + ")";
 						}
 					} else {
 						if (File.Exists (args[i]) || Directory.Exists (args[i])) {
