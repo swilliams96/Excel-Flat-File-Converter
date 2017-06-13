@@ -24,6 +24,9 @@ namespace Excel_Flat_File_Converter {
 
 			files = new List<string> ();
 
+			LogLine ("Starting...", true);
+			LogLine ();
+
 			// Parse any given arguments
 			if (args.Length == 0) {
 				GetFilesFromInput ();		// If no arguments then ask the user for input
@@ -37,6 +40,9 @@ namespace Excel_Flat_File_Converter {
 					} else {
 						if (File.Exists (args[i]) || Directory.Exists (args[i])) {
 							GetFiles (args[i]);
+						} else {
+							LogLine ("The following file or folder given as an argument does not exist...", true);
+							LogLine ("    " + args[i], true);
 						}
 					}
 				}
@@ -52,6 +58,8 @@ namespace Excel_Flat_File_Converter {
 				}
 			}
 			LogLine ();
+
+			LogLine ("Complete!" + Environment.NewLine, true);
 
 			// If we're not in silent mode, wait until the user presses a key to exit
 			if (!silent) {
@@ -85,7 +93,7 @@ namespace Excel_Flat_File_Converter {
 					string filename = Path.GetFileNameWithoutExtension (path);
 					if (filename.Length >= 6 && filename.Substring (filename.Length - suffix.Length, suffix.Length) != suffix) {
 						files.Add (path);
-						LogLine ("Adding file...", true);
+						LogLine ("Added file:", true);
 						LogLine ("    " + path, true);
 						return true;
 					} else {
@@ -125,21 +133,21 @@ namespace Excel_Flat_File_Converter {
 		static void CreateFlatFile (string file) {
 			// Check file still exists
 			if (!File.Exists(file)) {
-				LogLine ("ERROR: Given file does not exist!", true);
-				LogLine ("     : Cannot create a flat file version of this file.", true);
+				LogLine ("        ERROR: Given file does not exist!", true);
+				LogLine ("             : Cannot create a flat file version of this file.", true);
 				return;
 			}
 
 			// Create new copy of the file
 			string newfile = file.Substring (0, file.Length - Path.GetExtension (file).Length) + suffix + Path.GetExtension (file);
 			if (File.Exists(newfile))
-				LogLine ("Overwriting existing flat file...", true);
+				LogLine ("        (Overwriting existing flat file...)", true);
 			try {
 				File.Copy (file, newfile, true);
 				File.SetLastWriteTime (newfile, DateTime.Now);
 			} catch (IOException) {
-				LogLine ("ERROR: Could not overwrite the existing flat file as it was in use by another program.", true);
-				LogLine ("     : Please ensure it is closed in Excel and try again.", true);
+				LogLine ("        ERROR: Could not overwrite the existing flat file as it was in use by another program.", true);
+				LogLine ("             : Please ensure it is closed in Excel and try again.", true);
 				LogLine ();
 			}
 
@@ -157,18 +165,22 @@ namespace Excel_Flat_File_Converter {
 					// Copy the entire sheet and paste as values
 					ws.UsedRange.Copy (Type.Missing);
 					ws.UsedRange.PasteSpecial(Excel.XlPasteType.xlPasteValues);
+
+					// Reset selection to cell A1 for this sheet (tidier than leaving UsedRange selected)
+					ws.Activate ();
+					ws.Range["ZZ99"].Activate ();
+					ws.Range["A1"].Activate ();
 				} catch (COMException e) {
-					LogLine ("ERROR: An error occurred when pasting as values...", true);
-					LogLine ("    Error Code: " + e.ErrorCode.ToString (), true);
-					LogLine ("    " + e.Message, true);
+					LogLine ("        ERROR: An error occurred when pasting as values...", true);
+					LogLine ("            Error Code: " + e.ErrorCode.ToString (), true);
+					LogLine ("            " + e.Message, true);
 				}
+
+				
 			}
 
-			// Select cell A1 of the first sheet, just to reset all of the selections made when copying and pasting (tidier)
-			Excel.Worksheet firstSheet = wb.Worksheets[1];
-			firstSheet.Activate ();
-			firstSheet.Range["ZZ999"].Activate ();		// Select something not selected to reset selection
-			firstSheet.Range["A1"].Activate ();			// Select A1 on first sheet
+			// Go back to first sheet once we've converted the file
+			(wb.Worksheets[1] as Excel.Worksheet).Activate ();
 
 			// Save and close!
 			wb.Save ();
