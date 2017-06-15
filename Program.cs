@@ -7,6 +7,7 @@ using System.IO;
 using System.Collections.ObjectModel;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace Excel_Flat_File_Converter {
 	class Program {
@@ -16,6 +17,7 @@ namespace Excel_Flat_File_Converter {
 
 		static List<string> files;
 		static bool silent = false;
+		static bool nomacros = false;
 		static string suffix = " (FLAT)";
 
 		static readonly string[] validExtensions = new string[] { ".xlsx", ".xlsm", ".xls" };
@@ -33,9 +35,14 @@ namespace Excel_Flat_File_Converter {
 			} else {
 				for (int i = 0; i < args.Length; i++) {
 					if (args[i].Substring (0, 1) == "-" && args[i].Length > 1) {
+						args[i] = args[i].ToLower ();
 						if (args[i].Substring (1) == "s") {
 							// Silent mode
 							silent = true;
+						}
+						if (args[i].Substring (1) == "nomacros" || args[i].Substring (1) == "nm" || args[i].Substring (1) == "xlsx") {
+							// Save as xlsx (to remove all macros embedded in the workbook
+							nomacros = true;
 						}
 						if (args[i].Substring (1) == "datesuffix" || args[i].Substring (1) == "datesuffix1" || args[i].Substring (1) == "ds" || args[i].Substring (1) == "ds1") {
 							// Set suffix to current date in the format " (YYYYMMDD)"
@@ -167,9 +174,12 @@ namespace Excel_Flat_File_Converter {
 
 			// Create a new Excel Application instance if we haven't already
 			if (xlApp == null) {
+				Console.WriteLine ("        Opening Excel...");
 				xlApp = new Excel.Application ();
 				xlApp.Visible = false;
 				xlApp.AskToUpdateLinks = false;
+				xlApp.DisplayAlerts = false;
+				xlApp.WarnOnFunctionNameConflict = false;
 			}
 
 			// Open this file with the Excel Application
@@ -195,9 +205,21 @@ namespace Excel_Flat_File_Converter {
 
 			// Go back to first sheet once we've converted the file
 			(wb.Worksheets[1] as Excel.Worksheet).Activate ();
+			(wb.Worksheets[1] as Excel.Worksheet).Range["A1"].Activate ();
 
 			// Save and close!
-			wb.Save ();
+			if (nomacros && Path.GetExtension (file) == ".xlsm") {
+				Console.WriteLine ("        Removing macros from the .xlsm file...");
+				xlApp.DisplayAlerts = false;			// Make sure alerts are still turned off
+				wb.SaveAs (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx", Excel.XlFileFormat.xlOpenXMLWorkbook);
+
+				// If we can successfully find our new .xlsx file then we can go ahead and delete the .xlsm version
+				if (File.Exists (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx")) {
+					File.Delete (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsm");
+				}
+			} else {
+				wb.Save ();
+			}
 			wb.Close ();
 		}
 	}
