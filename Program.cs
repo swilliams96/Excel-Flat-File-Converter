@@ -159,10 +159,19 @@ namespace Excel_Flat_File_Converter {
 				return;
 			}
 
+			// Create a new Excel Application instance if we haven't already
+			if (xlApp == null) {
+				LogLine ("        Opening Excel...", true);
+				xlApp = new Excel.Application ();
+				xlApp.Visible = false;
+				xlApp.AskToUpdateLinks = false;
+				xlApp.DisplayAlerts = false;
+			}
+
 			// Create new copy of the file
 			string newfile = file.Substring (0, file.Length - Path.GetExtension (file).Length) + suffix + Path.GetExtension (file);
 			if (File.Exists(newfile))
-				LogLine ("        (Overwriting existing flat file...)", true);
+				LogLine ("        Overwriting existing flat file...", true);
 			try {
 				File.Copy (file, newfile, true);
 				File.SetLastWriteTime (newfile, DateTime.Now);
@@ -170,16 +179,6 @@ namespace Excel_Flat_File_Converter {
 				LogLine ("        ERROR: Could not overwrite the existing flat file as it was in use by another program.", true);
 				LogLine ("             : Please ensure it is closed in Excel and try again.", true);
 				LogLine ();
-			}
-
-			// Create a new Excel Application instance if we haven't already
-			if (xlApp == null) {
-				Console.WriteLine ("        Opening Excel...");
-				xlApp = new Excel.Application ();
-				xlApp.Visible = false;
-				xlApp.AskToUpdateLinks = false;
-				xlApp.DisplayAlerts = false;
-				xlApp.WarnOnFunctionNameConflict = false;
 			}
 
 			// Open this file with the Excel Application
@@ -195,12 +194,10 @@ namespace Excel_Flat_File_Converter {
 					ws.Range["ZZ99"].Activate ();
 					ws.Range["A1"].Activate ();
 				} catch (COMException e) {
-					LogLine ("        ERROR: An error occurred when pasting as values...", true);
+					LogLine ("        ERROR: An COMException occurred when pasting as values...", true);
 					LogLine ("            Error Code: " + e.ErrorCode.ToString (), true);
 					LogLine ("            " + e.Message, true);
 				}
-
-				
 			}
 
 			// Go back to first sheet once we've converted the file
@@ -209,13 +206,22 @@ namespace Excel_Flat_File_Converter {
 
 			// Save and close!
 			if (nomacros && Path.GetExtension (file) == ".xlsm") {
-				Console.WriteLine ("        Removing macros from the .xlsm file...");
-				xlApp.DisplayAlerts = false;			// Make sure alerts are still turned off
-				wb.SaveAs (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx", Excel.XlFileFormat.xlOpenXMLWorkbook);
-
-				// If we can successfully find our new .xlsx file then we can go ahead and delete the .xlsm version
-				if (File.Exists (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx")) {
-					File.Delete (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsm");
+				try {
+					LogLine ("        Removing macros from the .xlsm file...", true);
+					xlApp.DisplayAlerts = false;            // Make sure alerts are still turned off
+					wb.SaveAs (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx", Excel.XlFileFormat.xlOpenXMLWorkbook);
+					// If we can successfully find this new .xlsx file then we can go ahead and delete the old temporary .xlsm version
+					if (File.Exists (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsx")) {
+						File.Delete (Path.Combine (Path.GetDirectoryName (file), Path.GetFileNameWithoutExtension (file)) + suffix + ".xlsm");
+					}
+				} catch (COMException e) {
+					LogLine ("        ERROR: An COMException occurred when saving the macro-free file...", true);
+					LogLine ("            Error Code: " + e.ErrorCode.ToString (), true);
+					LogLine ("            " + e.Message, true);
+				} catch (IOException e) {
+					LogLine ("        ERROR: An IOException occurred when saving the macro-free file...", true);
+					LogLine ("            Error Code: " + e.HResult.ToString (), true);
+					LogLine ("            " + e.Message, true);
 				}
 			} else {
 				wb.Save ();
